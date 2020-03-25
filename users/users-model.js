@@ -1,4 +1,5 @@
 const db = require('../db/db-config.js');
+require('dotenv').config();
 
 module.exports = {
   find,

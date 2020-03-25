@@ -5,23 +5,24 @@ const usersRouter = require('./users/users-router.js');
 const authRouter = require('./auth/auth-router');
 const restricted = require('./auth/restricted-middleware.js');
 
-const sessionConfig = {
-  name: 'masterchief',
-  secret: 'this is a secret . . .',
-  cookie: {
-    maxAge: 1000 * 60 * 60,
-    secure: false,
-    httpOnly: true,
-  },
-  resave: false,
-  saveUninitialized: true
-};
+function checkRole(role) {
+  return (req, res, next) => {
+    if (
+      req.decodedToken &&
+      req.decodedToken.role &&
+      req.decodedToken.role.toLowerCase() === role
+    ) {
+      next();
+    } else {
+      res.status(403).json({ message: "Excuse me, but . . . umm . . . you're not allowed to be here" });
+    }
+  };
+}
 
 const server = express();
       server.use(express.json());
       server.use(helmet());
-      server.use(session(sessionConfig));
-      server.use('/api/users', restricted, usersRouter);
+      server.use('/api/users', restricted, checkRole('user'), usersRouter);
       server.use("/api/auth", authRouter);
 
 server.get('/', (req, res) => {

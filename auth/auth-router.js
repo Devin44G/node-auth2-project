@@ -1,11 +1,12 @@
 const auth_router = require('express').Router();
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { jwtSecret } = require('../config/secrets.js');
 const Users = require('../users/users-model.js');
 
 auth_router.post('/register', (req, res) => {
   const userInfo = req.body;
-  const ROUNDS = process.env.HASHING_ROUNDS || 10;
-  const hash = bcrypt.hashSync(userInfo.password, ROUNDS);
+  const hash = bcrypt.hashSync(userInfo.password, 10);
 
   userInfo.password = hash;
 
@@ -22,13 +23,11 @@ auth_router.post('/login', (req, res) => {
   const { username, password } = req.body;
 
   Users.findBy({ username })
-    .then(([user]) => {
+    .first()
+    .then(user => {
       if(user && bcrypt.compareSync(password, user.password)) {
-        req.session.user = {
-          id: user.id,
-          username: user.username
-        };
-        res.status(200).json({ welcome: user.username });
+        const token = generateToken(user);
+        res.status(200).json({ welcome: user.username, token });
       } else {
         res.status(401).json({ message: "Invalid credentials" });
       }
@@ -51,5 +50,22 @@ auth_router.get('/logout', (req, res) => {
     res.status(200).json({ message: "You were never here" });
   }
 });
+
+function generateToken(user) {
+  const payload = {
+    subject: user.id,
+    username: user.username,
+    department: user.deparmtent,
+    role: user.role || 'user'
+  };
+
+  // const secret replaced by secret file
+
+  const options = {
+    expiresIn: '1hr'
+  };
+
+  return jwt.sign(payload, jwtSecret, options);
+}
 
 module.exports = auth_router;
