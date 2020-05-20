@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const usersRouter = require('./users/users-router.js');
 const authRouter = require('./auth/auth-router');
 const restricted = require('./auth/restricted-middleware.js');
+const cors = require('cors');
 
 function checkRole(role) {
   return (req, res, next) => {
@@ -20,6 +21,7 @@ function checkRole(role) {
 }
 
 const server = express();
+      server.use(cors());
       server.use(express.json());
       server.use(helmet());
       server.use('/api/users', restricted, checkRole('user'), usersRouter);
